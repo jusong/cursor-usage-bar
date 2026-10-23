@@ -8,6 +8,7 @@ final class UsageBoard: NSObject {
     private let columnsView = StatusColumnsView()
     private let menu = NSMenu()
     private var mode = DisplayMode(stored: UserDefaults.standard.string(forKey: "displayMode"))
+    private var language = AppLanguage.stored(UserDefaults.standard.string(forKey: AppLanguage.storageKey))
     private var phase: Phase = .loading
     private var refreshing = false
     private var timer: Timer?
@@ -112,7 +113,7 @@ final class UsageBoard: NSObject {
     private func renderTitle() {
         switch phase {
         case .signedOut:
-            columnsView.plain = "未登录"
+            columnsView.plain = language.text(.signedOut)
             columnsView.columns = []
         case .loading, .failed:
             columnsView.plain = nil
@@ -163,28 +164,29 @@ final class UsageBoard: NSObject {
         menu.removeAllItems()
         switch phase {
         case .loading:
-            addHeader(period: nil, message: "正在读取用量", warning: nil, to: menu)
+            addHeader(period: nil, message: language.text(.loading), warning: nil, to: menu)
         case .signedOut:
-            addHeader(period: nil, message: "请先打开 Cursor 并登录", warning: nil, to: menu)
+            addHeader(period: nil, message: language.text(.signInFirst), warning: nil, to: menu)
         case .failed:
-            addHeader(period: nil, message: "用量暂时拉不下来", warning: nil, to: menu)
+            addHeader(period: nil, message: language.text(.unavailable), warning: nil, to: menu)
         case .stale(let snapshot, let failedAt):
-            addSnapshot(snapshot, warning: "\(clock.string(from: failedAt)) 刷新失败，下面仍是上次的用量", to: menu)
+            addSnapshot(snapshot, warning: language.text(.refreshFailed(clock.string(from: failedAt))), to: menu)
         case .partial(let period):
             addHeader(period: cycle(period.cycleStart, period.cycleEnd), message: nil, warning: nil, to: menu)
             addLine(UsageLine(name: "Cursor Models", tokens: nil, percent: UsageText.detailPercent(period.cursorPercent), kind: .pool, tint: .cursor), to: menu)
             menu.addItem(.separator())
             addLine(UsageLine(name: "Other Models", tokens: nil, percent: UsageText.detailPercent(period.otherPercent), kind: .pool, tint: .other), to: menu)
-            addLine(UsageLine(name: "模型明细暂时不可用", tokens: nil, percent: nil, kind: .note), to: menu)
+            addLine(UsageLine(name: language.text(.modelsUnavailable), tokens: nil, percent: nil, kind: .note), to: menu)
         case .ready(let snapshot):
             addSnapshot(snapshot, warning: nil, to: menu)
         }
         menu.addItem(.separator())
         menu.addItem(displayMenu)
-        let refreshItem = NSMenuItem(title: "刷新", action: #selector(refreshNow), keyEquivalent: "r")
+        menu.addItem(languageMenu)
+        let refreshItem = NSMenuItem(title: language.text(.refresh), action: #selector(refreshNow), keyEquivalent: "r")
         refreshItem.target = self
         menu.addItem(refreshItem)
-        let quitItem = NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: language.text(.quit), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
     }
@@ -205,7 +207,7 @@ final class UsageBoard: NSObject {
             tint: tint
         ), to: menu)
         if pool.models.isEmpty {
-            addLine(UsageLine(name: "这个账期没有用量", tokens: nil, percent: nil, kind: .note), to: menu)
+            addLine(UsageLine(name: language.text(.noUsage), tokens: nil, percent: nil, kind: .note), to: menu)
             return
         }
         for model in pool.models {
@@ -221,7 +223,7 @@ final class UsageBoard: NSObject {
 
     private func addHeader(period: String?, message: String?, warning: String?, to menu: NSMenu) {
         let item = NSMenuItem()
-        item.view = PeriodHeaderView(period: period, message: message, warning: warning)
+        item.view = PeriodHeaderView(period: period, periodLabel: language.text(.thisPeriod), message: message, warning: warning)
         menu.addItem(item)
     }
 
@@ -236,18 +238,36 @@ final class UsageBoard: NSObject {
     }
 
     private var displayMenu: NSMenuItem {
-        let root = NSMenuItem(title: "顶部栏显示", action: nil, keyEquivalent: "")
+        let root = NSMenuItem(title: language.text(.menuBarDisplay), action: nil, keyEquivalent: "")
         let submenu = NSMenu()
         let choices: [(String, DisplayMode)] = [
-            ("百分比", .percent),
-            ("百分比和 token", .percentAndTokens),
-            ("仅 token", .tokens),
+            (language.text(.percent), .percent),
+            (language.text(.percentAndTokens), .percentAndTokens),
+            (language.text(.tokensOnly), .tokens),
         ]
         for (title, value) in choices {
             let item = NSMenuItem(title: title, action: #selector(selectMode(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = value.rawValue
             item.state = value == mode ? .on : .off
+            submenu.addItem(item)
+        }
+        root.submenu = submenu
+        return root
+    }
+
+    private var languageMenu: NSMenuItem {
+        let root = NSMenuItem(title: language.text(.language), action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        let choices: [(String, AppLanguage)] = [
+            ("中文", .chinese),
+            ("English", .english),
+        ]
+        for (title, value) in choices {
+            let item = NSMenuItem(title: title, action: #selector(selectLanguage(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = value.rawValue
+            item.state = value == language ? .on : .off
             submenu.addItem(item)
         }
         root.submenu = submenu
@@ -267,6 +287,14 @@ final class UsageBoard: NSObject {
         sender.menu?.items.forEach { $0.state = .off }
         sender.state = .on
         renderTitle()
+    }
+
+    @objc private func selectLanguage(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String else { return }
+        language = AppLanguage.stored(raw)
+        UserDefaults.standard.set(language.rawValue, forKey: AppLanguage.storageKey)
+        renderTitle()
+        populate()
     }
 
     @objc private func refreshNow() {
@@ -302,9 +330,9 @@ if CommandLine.arguments.contains("--dump") {
         let result = await UsageBoard.load()
         switch result {
         case .signedOut:
-            print("未登录")
+            print(AppLanguage.stored(UserDefaults.standard.string(forKey: AppLanguage.storageKey)).text(.signedOut))
         case .periodFailed:
-            print("用量暂时拉不下来")
+            print(AppLanguage.stored(UserDefaults.standard.string(forKey: AppLanguage.storageKey)).text(.unavailable))
         case .eventsFailed(let period):
             print(UsageText.menuBar(
                 cursorPercent: period.cursorPercent,
@@ -313,7 +341,7 @@ if CommandLine.arguments.contains("--dump") {
                 otherTokens: nil,
                 mode: .percent
             ))
-            print("模型明细暂时不可用")
+            print(AppLanguage.stored(UserDefaults.standard.string(forKey: AppLanguage.storageKey)).text(.modelsUnavailable))
         case .ready(let snapshot):
             print(UsageText.menuBar(snapshot, mode: .percent))
             print(UsageText.menuBar(snapshot, mode: .percentAndTokens))

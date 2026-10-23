@@ -204,12 +204,14 @@ final class StatusColumnsView: NSView {
 
 final class PeriodHeaderView: NSView {
     private let period: String?
+    private let periodLabel: String?
     private let message: String?
     private let warning: String?
     private let icon: NSImage
 
-    init(period: String?, message: String?, warning: String?) {
+    init(period: String?, periodLabel: String?, message: String?, warning: String?) {
         self.period = period
+        self.periodLabel = periodLabel
         self.message = message
         self.warning = warning
         icon = Mark.cursorIcon(pointSize: 32)
@@ -245,7 +247,10 @@ final class PeriodHeaderView: NSView {
         ])
         title.draw(in: NSRect(x: textX, y: plate.minY + 9, width: textWidth, height: 18))
 
-        let subtitle = period.map { "本账期  \($0)" } ?? (message ?? "")
+        let subtitle = period.map { range in
+            guard let periodLabel, !periodLabel.isEmpty else { return range }
+            return "\(periodLabel)  \(range)"
+        } ?? (message ?? "")
         let subtitleText = NSAttributedString(string: subtitle, attributes: [
             .font: NSFont.systemFont(ofSize: 11, weight: .regular),
             .foregroundColor: NSColor.secondaryLabelColor,

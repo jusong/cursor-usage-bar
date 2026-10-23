@@ -8,7 +8,7 @@ Cursor Models and Other Models sit side by side. The name is on top and the numb
 
 ![Usage menu](docs/screenshots/usage-menu.png)
 
-The menu is in Chinese. `default` from the API is shown as `auto`.
+Switch the menu between Chinese and English from **语言** / **Language**. Until you choose, it follows the system language. `default` from the API is shown as `auto`. Token amounts stay in 万 / 亿 so they match the billing page.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ The app does not appear in the Dock. After you quit it from the menu, open `Curs
 
 ## Menu bar
 
-Choose the detail level from **顶部栏显示**. The choice is remembered.
+Choose the detail level from **顶部栏显示** / **Menu bar**. The choice is remembered.
 
 | Mode | Example |
 | --- | --- |
