@@ -6,42 +6,37 @@ enum MenuMetrics {
 }
 
 enum Mark {
-    static func cursorIcon(pointSize: CGFloat) -> NSImage {
-        let path = "/Applications/Cursor.app"
-        if FileManager.default.fileExists(atPath: path) {
-            let image = NSWorkspace.shared.icon(forFile: path)
-            image.size = NSSize(width: pointSize, height: pointSize)
-            return image
-        }
-        return fallback(pointSize: pointSize)
-    }
-
-    private static func fallback(pointSize: CGFloat) -> NSImage {
+    static func image(pointSize: CGFloat) -> NSImage {
         let size = NSSize(width: pointSize, height: pointSize)
-        return NSImage(size: size, flipped: false) { rect in
-            let box = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), xRadius: rect.width * 0.22, yRadius: rect.height * 0.22)
-            NSColor.controlAccentColor.setFill()
-            box.fill()
-            NSColor.white.setFill()
-            for bar in bars(in: rect.insetBy(dx: rect.width * 0.24, dy: rect.height * 0.24)) {
-                bar.fill()
-            }
+        let image = NSImage(size: size, flipped: false) { rect in
+            draw(in: rect)
             return true
         }
+        return image
     }
 
-    private static func bars(in rect: NSRect) -> [NSBezierPath] {
-        let heights: [CGFloat] = [0.46, 0.68, 1]
-        let width = rect.width * 0.18
-        let gap = rect.width * 0.08
-        let total = width * 3 + gap * 2
-        var x = rect.minX + (rect.width - total) / 2
-        return heights.map { ratio in
-            let height = rect.height * ratio
-            let bar = NSBezierPath(roundedRect: NSRect(x: x, y: rect.minY, width: width, height: height), xRadius: 1, yRadius: 1)
-            x += width + gap
-            return bar
-        }
+    static func draw(in rect: NSRect) {
+        let background = NSBezierPath(roundedRect: rect, xRadius: rect.width * 0.22, yRadius: rect.height * 0.22)
+        NSColor(srgbRed: 0.11, green: 0.13, blue: 0.16, alpha: 1).setFill()
+        background.fill()
+
+        let field = rect.insetBy(dx: rect.width * 0.24, dy: rect.height * 0.22)
+        let barWidth = field.width * 0.38
+        let gap = field.width - barWidth * 2
+        bar(
+            in: NSRect(x: field.minX, y: field.minY, width: barWidth, height: field.height * 0.92),
+            color: NSColor(srgbRed: 0.18, green: 0.78, blue: 0.42, alpha: 1)
+        )
+        bar(
+            in: NSRect(x: field.minX + barWidth + gap, y: field.minY, width: barWidth, height: field.height * 0.62),
+            color: NSColor(srgbRed: 1, green: 0.62, blue: 0.16, alpha: 1)
+        )
+    }
+
+    private static func bar(in rect: NSRect, color: NSColor) {
+        let radius = rect.width / 2
+        color.setFill()
+        NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
     }
 }
 
@@ -100,7 +95,7 @@ final class StatusColumnsView: NSView {
         didSet { needsDisplay = true }
     }
 
-    private let logo = Mark.cursorIcon(pointSize: 32)
+    private let logo = Mark.image(pointSize: 32)
 
     override var isFlipped: Bool { true }
 
@@ -214,7 +209,7 @@ final class PeriodHeaderView: NSView {
         self.periodLabel = periodLabel
         self.message = message
         self.warning = warning
-        icon = Mark.cursorIcon(pointSize: 32)
+        icon = Mark.image(pointSize: 32)
         let height = Self.height(hasWarning: warning != nil)
         super.init(frame: NSRect(x: 0, y: 0, width: MenuMetrics.width, height: height))
         autoresizingMask = [.width]

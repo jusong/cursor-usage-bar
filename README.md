@@ -1,5 +1,7 @@
 # Cursor Usage Bar
 
+<img src="docs/logo.png" width="96" alt="Cursor Usage Bar logo">
+
 A macOS menu-bar app that shows the included usage from the [Cursor billing page](https://cursor.com/dashboard/billing).
 
 Cursor Models and Other Models sit side by side. The name is on top and the number is underneath. Open the menu to see each model.
@@ -8,7 +10,7 @@ Cursor Models and Other Models sit side by side. The name is on top and the numb
 
 ![Usage menu](docs/screenshots/usage-menu.png)
 
-Switch the menu between Chinese and English from **语言** / **Language**. Until you choose, it follows the system language. `default` from the API is shown as `auto`. Token amounts stay in 万 / 亿 so they match the billing page.
+Switch the menu between English and Chinese from **Language**. English is the default until you choose. `default` from the API is shown as `auto`. Large token counts use compact Chinese number units.
 
 ## Requirements
 
@@ -33,17 +35,17 @@ The app does not appear in the Dock. After you quit it from the menu, open `Curs
 
 ## Menu bar
 
-Choose the detail level from **顶部栏显示** / **Menu bar**. The choice is remembered.
+Choose the detail level from **Menu bar**. The choice is remembered.
 
 | Mode | Example |
 | --- | --- |
 | Percent | `94%` under the name |
-| Percent and tokens | `6.0亿 94%` under the name |
-| Tokens only | `6.0亿` under the name |
+| Percent and tokens | compact token count, then `94%` |
+| Tokens only | compact token count |
 
 Cursor numbers are green. Other numbers are orange. The menu always lists tokens and a one-decimal percentage, whatever the menu bar is showing. The menu bar rounds percentages to the nearest integer, so `95.6%` in the menu can read `96%` in the bar.
 
-Usage refreshes when the app launches, every 5 minutes, and when you choose **刷新**.
+Usage refreshes when the app launches, every 5 minutes, and when you choose **Refresh**.
 
 ## How usage is loaded
 
@@ -59,7 +61,7 @@ Pool percentages come from Cursor. Each model's percentage is that pool's percen
 
 The only network calls are those two requests to `cursor.com`. They send the existing Cursor session cookie and the billing-period dates. Usage figures are downloaded, not uploaded. No usage, source code, or local files are sent anywhere else.
 
-The only value stored by this app is the menu-bar display mode.
+This app only stores the menu-bar display mode and the language you choose.
 
 ## Development
 
@@ -74,4 +76,4 @@ swift run CursorUsageBar --dump
 
 [MIT](LICENSE)
 
-Cursor Usage Bar is an independent project. It is not affiliated with Anysphere or Cursor. Cursor and the Cursor logo are trademarks of their owner. The menu-bar icon is loaded from a local Cursor installation when one is present.
+Cursor Usage Bar is an independent project. It is not affiliated with Anysphere or Cursor. Cursor is a trademark of its owner. The app icon is original: two usage bars, green and orange, on a dark rounded square.

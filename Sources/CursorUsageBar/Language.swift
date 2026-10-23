@@ -10,8 +10,7 @@ enum AppLanguage: String {
         if let raw, let language = AppLanguage(rawValue: raw) {
             return language
         }
-        let preferred = Locale.preferredLanguages.first ?? "en"
-        return preferred.hasPrefix("zh") ? .chinese : .english
+        return .english
     }
 
     func text(_ key: Key) -> String {
