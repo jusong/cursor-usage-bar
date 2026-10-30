@@ -47,6 +47,8 @@ enum AppLanguage: String {
             return self == .chinese ? "退出" : "Quit"
         case .language:
             return self == .chinese ? "语言" : "Language"
+        case .openBilling:
+            return self == .chinese ? "打开账单页" : "Open billing page"
         }
     }
 
@@ -66,5 +68,6 @@ enum AppLanguage: String {
         case refresh
         case quit
         case language
+        case openBilling
     }
 }

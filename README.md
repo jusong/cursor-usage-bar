@@ -14,13 +14,23 @@ Switch the menu between English and Chinese from **Language**. English is the de
 
 ## Requirements
 
-- macOS 14 or later
+- macOS 14 or later (Apple Silicon or Intel)
 - [Cursor](https://cursor.com) installed and signed in on this Mac
-- Swift 6 or later to build from source
 
 ## Install
 
-There is no notarized download yet. Build it locally:
+Download [CursorUsage-1.0.0.dmg](https://github.com/jusong/cursor-usage-bar/releases/download/v1.0.0/CursorUsage-1.0.0.dmg) (universal), open it, and drag the app into Applications.
+
+This build is ad-hoc signed and is not notarized. After copying it out of the disk image, clear the download quarantine flag, then open it:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/CursorUsage.app
+open /Applications/CursorUsage.app
+```
+
+The app does not appear in the Dock. After you quit it from the menu, open `CursorUsage.app` again.
+
+To build it yourself you need Swift 6 or later:
 
 ```bash
 git clone https://github.com/jusong/cursor-usage-bar.git
@@ -28,10 +38,6 @@ cd cursor-usage-bar
 ./scripts/package-app.sh
 open CursorUsage.app
 ```
-
-The app does not appear in the Dock. After you quit it from the menu, open `CursorUsage.app` again.
-
-`./scripts/package-app.sh` signs the app for the current Mac only. Gatekeeper will block that build on another Mac until it is signed with a Developer ID and notarized.
 
 ## Menu bar
 
@@ -51,7 +57,7 @@ Usage refreshes when the app launches, every 5 minutes, and when you choose **Re
 
 The app reads the Cursor login already stored on this Mac. It does not ask you to paste a cookie.
 
-1. Open `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` read-only and read `cursorAuth/accessToken`.
+1. Open `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` read-only and read `cursorAuth/accessToken`. Current Cursor builds store it encrypted, so the app asks macOS (through Apple's `security` tool) for the **Cursor Safe Storage** password, once per launch, and decrypts the token in memory. Neither the password nor the token is saved by this app.
 2. `POST https://cursor.com/api/dashboard/get-current-period-usage` for the billing period and the two pool percentages.
 3. `POST https://cursor.com/api/dashboard/get-aggregated-usage-events` for per-model tokens and cost, using that same period.
 

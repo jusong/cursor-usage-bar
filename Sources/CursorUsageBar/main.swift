@@ -50,8 +50,10 @@ final class UsageBoard: NSObject {
         refreshing = true
         Task {
             let result = await Self.load()
-            refreshing = false
-            apply(result)
+            await MainActor.run {
+                refreshing = false
+                apply(result)
+            }
         }
     }
 
@@ -223,7 +225,13 @@ final class UsageBoard: NSObject {
 
     private func addHeader(period: String?, message: String?, warning: String?, to menu: NSMenu) {
         let item = NSMenuItem()
-        item.view = PeriodHeaderView(period: period, periodLabel: language.text(.thisPeriod), message: message, warning: warning)
+        item.view = PeriodHeaderView(
+            period: period,
+            periodLabel: language.text(.thisPeriod),
+            message: message,
+            warning: warning,
+            linkTitle: language.text(.openBilling)
+        )
         menu.addItem(item)
     }
 

@@ -198,17 +198,22 @@ final class StatusColumnsView: NSView {
 }
 
 final class PeriodHeaderView: NSView {
+    private static let billingURL = URL(string: "https://cursor.com/dashboard/billing")!
+
     private let period: String?
     private let periodLabel: String?
     private let message: String?
     private let warning: String?
+    private let linkTitle: String
     private let icon: NSImage
+    private var linkFrame = NSRect.zero
 
-    init(period: String?, periodLabel: String?, message: String?, warning: String?) {
+    init(period: String?, periodLabel: String?, message: String?, warning: String?, linkTitle: String) {
         self.period = period
         self.periodLabel = periodLabel
         self.message = message
         self.warning = warning
+        self.linkTitle = linkTitle
         icon = Mark.image(pointSize: 32)
         let height = Self.height(hasWarning: warning != nil)
         super.init(frame: NSRect(x: 0, y: 0, width: MenuMetrics.width, height: height))
@@ -221,6 +226,13 @@ final class PeriodHeaderView: NSView {
     }
 
     override var isFlipped: Bool { true }
+
+    override func resetCursorRects() {
+        discardCursorRects()
+        if !linkFrame.isEmpty {
+            addCursorRect(linkFrame, cursor: .pointingHand)
+        }
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         let plate = bounds.insetBy(dx: 8, dy: 7)
@@ -252,21 +264,37 @@ final class PeriodHeaderView: NSView {
         ])
         subtitleText.draw(in: NSRect(x: textX, y: plate.minY + 28, width: textWidth, height: 16))
 
+        var linkTop = plate.minY + 46
         if let warning {
             let warningText = NSAttributedString(string: warning, attributes: [
                 .font: NSFont.systemFont(ofSize: 11, weight: .medium),
                 .foregroundColor: NSColor.systemOrange,
             ])
             warningText.draw(in: NSRect(x: textX, y: plate.minY + 46, width: textWidth, height: 16))
+            linkTop = plate.minY + 64
         }
+
+        let link = NSAttributedString(string: linkTitle, attributes: [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium),
+            .foregroundColor: NSColor.linkColor,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+        ])
+        let linkSize = link.size()
+        linkFrame = NSRect(x: textX, y: linkTop, width: min(textWidth, linkSize.width + 2), height: 16)
+        link.draw(in: linkFrame)
+        window?.invalidateCursorRects(for: self)
     }
 
     override func mouseUp(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if linkFrame.contains(point) {
+            NSWorkspace.shared.open(Self.billingURL)
+        }
         enclosingMenuItem?.menu?.cancelTracking()
     }
 
     private static func height(hasWarning: Bool) -> CGFloat {
-        hasWarning ? 86 : 68
+        hasWarning ? 104 : 86
     }
 }
 

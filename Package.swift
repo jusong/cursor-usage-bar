@@ -10,7 +10,10 @@ let package = Package(
     targets: [
         .target(
             name: "CursorUsageCore",
-            linkerSettings: [.linkedLibrary("sqlite3")]
+            linkerSettings: [
+                .linkedLibrary("sqlite3"),
+                .linkedFramework("Security"),
+            ]
         ),
         .executableTarget(
             name: "CursorUsageBar",
